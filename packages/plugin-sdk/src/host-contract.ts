@@ -116,6 +116,16 @@ export interface ExperimentalHostRpcContext<
   /** Aborted once for the lifetime of this worker process. */
   readonly lifecycle: { readonly signal: AbortSignal };
   readonly experimental_paths: ExperimentalHostPaths;
+  /**
+   * The environment bb resolved for this call: the machine's own variables
+   * with the contributed ones — the global machine environment, plus the
+   * listed project's when the call names a project — applied over them. A
+   * handler that answers from environment variables reads them here rather
+   * than from `process.env`: one worker serves the whole plugin, so while
+   * calls overlap `process.env` holds whichever call's values were applied
+   * first.
+   */
+  readonly experimental_env: Readonly<Record<string, string | undefined>>;
   /** Publish a validated, ephemeral event to this plugin's server entry. */
   experimental_emitSignal<SignalName extends keyof Signals & string>(
     signal: SignalName,

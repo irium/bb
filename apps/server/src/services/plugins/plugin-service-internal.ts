@@ -137,6 +137,7 @@ export interface PluginServiceDeps {
     method: string;
     input: unknown;
     hostId: string;
+    projectId: string | null;
     signal?: AbortSignal;
     timeoutMs?: number;
     artifact: PluginHostArtifactSnapshot;

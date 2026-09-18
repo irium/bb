@@ -30,6 +30,7 @@ function createOperationEnvironmentScope(target: NodeJS.ProcessEnv) {
   };
 }
 
+const workerBaseEnvironment: NodeJS.ProcessEnv = { ...process.env };
 const acquireEnvironment = createOperationEnvironmentScope(process.env);
 const RESULT_MAX_BYTES = 8 * 1024 * 1024;
 const DEFAULT_DISPOSE_TIMEOUT_MS = 5_000;
@@ -108,6 +109,7 @@ interface HostContext {
     readonly dataDir: string;
     readonly tempDir: string;
   };
+  readonly experimental_env: Readonly<Record<string, string | undefined>>;
   experimental_emitSignal(signal: string, payload: unknown): Promise<void>;
   experimental_watch(
     options: HostWatchOptions,
@@ -536,6 +538,10 @@ async function handleCall(
       signal: controller.signal,
       lifecycle: { signal: lifecycleController.signal },
       experimental_paths: { dataDir, tempDir },
+      experimental_env: Object.freeze({
+        ...workerBaseEnvironment,
+        ...message.envVars,
+      }),
       async experimental_emitSignal(signalName, payload) {
         const signal = currentEntry.experimental_signals?.[signalName];
         if (signal === undefined) {

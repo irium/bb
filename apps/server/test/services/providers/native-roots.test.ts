@@ -16,8 +16,9 @@ import {
   registerHostRpcResponder,
   type HostRpcHandlerResult,
 } from "../../helpers/host-rpc.js";
+import { replaceMachineEnvironment } from "../../../src/services/machines/environment-settings.js";
 import { stubHostArtifact } from "../../helpers/provider-registry.js";
-import { seedHostSession } from "../../helpers/seed.js";
+import { seedHostSession, seedProjectWithSource } from "../../helpers/seed.js";
 import {
   testLogger,
   withTestHarness,
@@ -132,6 +133,7 @@ describe("resolveProviderNativeRootSet", () => {
         const first = await resolveProviderNativeRootSet(harness.deps, {
           registration: reg,
           hostId: "host-a",
+          projectId: null,
           cwd: "/work/one",
           timeoutMs: 4_500,
         });
@@ -163,6 +165,7 @@ describe("resolveProviderNativeRootSet", () => {
         await resolveProviderNativeRootSet(harness.deps, {
           registration: reg,
           hostId: "host-a",
+          projectId: null,
           cwd: "/work/one",
           timeoutMs: COMMAND_TIMEOUT_MS,
         });
@@ -171,18 +174,21 @@ describe("resolveProviderNativeRootSet", () => {
         await resolveProviderNativeRootSet(harness.deps, {
           registration: reg,
           hostId: "host-a",
+          projectId: null,
           cwd: "/work/two",
           timeoutMs: COMMAND_TIMEOUT_MS,
         });
         await resolveProviderNativeRootSet(harness.deps, {
           registration: reg,
           hostId: "host-a",
+          projectId: null,
           cwd: null,
           timeoutMs: COMMAND_TIMEOUT_MS,
         });
         await resolveProviderNativeRootSet(harness.deps, {
           registration: reg,
           hostId: "host-b",
+          projectId: null,
           cwd: "/work/one",
           timeoutMs: COMMAND_TIMEOUT_MS,
         });
@@ -203,12 +209,72 @@ describe("resolveProviderNativeRootSet", () => {
         await resolveProviderNativeRootSet(harness.deps, {
           registration: reg,
           hostId: "host-a",
+          projectId: null,
           cwd: "/work/one",
           timeoutMs: COMMAND_TIMEOUT_MS,
         });
         expect(stubA.calls).toHaveLength(4);
       },
     );
+  });
+
+  it("carries the listed project's machine environment, and caches per project", async () => {
+    await withTestHarness({ extraProviders: [RESOLVING] }, async (harness) => {
+      harness.deps.pluginHostArtifacts.set(
+        PLUGIN_ID,
+        stubHostArtifact(PLUGIN_ID),
+      );
+      const stub = registerResolverHost(harness, "host-a");
+      const reg = registration(harness, "resolving");
+      const { project } = seedProjectWithSource(harness.deps, {
+        hostId: "host-a",
+      });
+      const other = seedProjectWithSource(harness.deps, {
+        hostId: "host-a",
+        name: "Other project",
+      }).project;
+      await replaceMachineEnvironment(
+        harness.deps.db,
+        harness.deps.config.dataDir,
+        {
+          variables: [
+            { name: "CLAUDE_CONFIG_DIR", value: "/moved", note: null },
+          ],
+        },
+        project.id,
+      );
+      const resolve = (projectId: string | null) =>
+        resolveProviderNativeRootSet(harness.deps, {
+          registration: reg,
+          hostId: "host-a",
+          projectId,
+          cwd: "/work/one",
+          timeoutMs: COMMAND_TIMEOUT_MS,
+        });
+
+      await resolve(project.id);
+      await resolve(other.id);
+      await resolve(null);
+      await resolve(project.id);
+
+      expect(
+        stub.calls.map((call) =>
+          call.command.type === "plugin.host.call"
+            ? call.command.contributedEnv
+            : null,
+        ),
+      ).toEqual([
+        [
+          expect.objectContaining({
+            name: "CLAUDE_CONFIG_DIR",
+            value: "/moved",
+            source: { core: "project-environment" },
+          }),
+        ],
+        [],
+        [],
+      ]);
+    });
   });
 
   it("keeps a slow answer for a full window after it lands, not after the call started", async () => {
@@ -226,6 +292,7 @@ describe("resolveProviderNativeRootSet", () => {
           resolveProviderNativeRootSet(harness.deps, {
             registration: reg,
             hostId: "host-a",
+            projectId: null,
             cwd: "/work/one",
             timeoutMs: COMMAND_TIMEOUT_MS,
           });
@@ -274,6 +341,7 @@ describe("resolveProviderNativeRootSet", () => {
           resolveProviderNativeRootSet(harness.deps, {
             registration: reg,
             hostId: "host-a",
+            projectId: null,
             cwd: "/work/one",
             timeoutMs: COMMAND_TIMEOUT_MS,
           }),
@@ -299,6 +367,7 @@ describe("resolveProviderNativeRootSet", () => {
         resolveProviderNativeRootSet(harness.deps, {
           registration: reg,
           hostId: "host-a",
+          projectId: null,
           cwd: "/work/one",
           timeoutMs: COMMAND_TIMEOUT_MS,
         });
@@ -346,6 +415,7 @@ describe("resolveProviderNativeRootSet", () => {
           resolveProviderNativeRootSet(deps, {
             registration: reg,
             hostId: "host-a",
+            projectId: null,
             cwd,
             timeoutMs: COMMAND_TIMEOUT_MS,
           });
@@ -359,6 +429,7 @@ describe("resolveProviderNativeRootSet", () => {
           pluginId: PLUGIN_ID,
           providerId: "resolving",
           hostId: "host-a",
+          projectId: null,
           cwd: "/work/throws",
         });
         expect(warn.mock.calls[0]?.[1]).toContain(PLUGIN_ID);
@@ -403,6 +474,7 @@ describe("resolveProviderNativeRootSet", () => {
         const withoutArtifact = await resolveProviderNativeRootSet(deps, {
           registration: registration(harness, "resolving"),
           hostId: "host-a",
+          projectId: null,
           cwd: "/work/one",
           timeoutMs: COMMAND_TIMEOUT_MS,
         });
@@ -413,6 +485,7 @@ describe("resolveProviderNativeRootSet", () => {
         const declaredOnly = await resolveProviderNativeRootSet(deps, {
           registration: registration(harness, "declared"),
           hostId: "host-a",
+          projectId: null,
           cwd: "/work/one",
           timeoutMs: COMMAND_TIMEOUT_MS,
         });

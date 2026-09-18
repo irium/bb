@@ -35,6 +35,7 @@ describe("callPluginHostRpc", () => {
         method: "create",
         input: { id: audioBase64 },
         hostId: host.id,
+        projectId: null,
         artifact: stubHostArtifact("environment-test"),
       };
       await expect(callPluginHostRpc(harness.deps, args)).resolves.toEqual({
@@ -86,6 +87,7 @@ describe("callPluginHostRpc", () => {
         method: "create",
         input: { id: "env-1" },
         hostId: host.id,
+        projectId: null,
         signal: controller.signal,
         artifact: stubHostArtifact("environment-test"),
       });

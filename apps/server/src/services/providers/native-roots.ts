@@ -124,12 +124,14 @@ function cacheKey(args: {
   pluginId: string;
   providerId: string;
   hostId: string;
+  projectId: string | null;
   cwd: string | null;
 }): string {
   return JSON.stringify([
     args.pluginId,
     args.providerId,
     args.hostId,
+    args.projectId ?? "",
     args.cwd ?? "",
   ]);
 }
@@ -137,6 +139,7 @@ function cacheKey(args: {
 interface ResolveNativeRootsArgs {
   registration: ProviderRegistration;
   hostId: string;
+  projectId: string | null;
   cwd: string | null;
   timeoutMs: number;
 }
@@ -148,7 +151,13 @@ async function callResolveNativeRoots(
   const { registration } = args;
   const pluginId = registration.pluginId;
   const providerId = registration.info.id;
-  const fields = { pluginId, providerId, hostId: args.hostId, cwd: args.cwd };
+  const fields = {
+    pluginId,
+    providerId,
+    hostId: args.hostId,
+    projectId: args.projectId,
+    cwd: args.cwd,
+  };
   const artifact = deps.pluginHostArtifacts.get(pluginId);
   if (artifact === undefined) {
     deps.logger.warn(
@@ -165,6 +174,7 @@ async function callResolveNativeRoots(
         method: "resolveNativeRoots",
         input: { providerId, cwd: args.cwd },
         hostId: args.hostId,
+        projectId: args.projectId,
         timeoutMs: args.timeoutMs,
         artifact,
       }),
@@ -191,6 +201,7 @@ export async function resolveProviderResolvedNativeRoots(
     pluginId,
     providerId: registration.info.id,
     hostId: args.hostId,
+    projectId: args.projectId,
     cwd: args.cwd,
   });
   const registrationRevision = deps.providerRegistry.getRegistrationRevision();
@@ -238,6 +249,7 @@ type ProviderNativeRootScanResult<TType extends ProviderNativeRootScanType> =
 interface ScanProviderNativeRootsArgs {
   registration: ProviderRegistration;
   hostId: string;
+  projectId: string | null;
   cwd: string | null;
 }
 
@@ -257,6 +269,7 @@ export async function scanProviderNativeRoots(
   const nativeRoots = await resolveProviderNativeRootSet(deps, {
     registration: args.registration,
     hostId: args.hostId,
+    projectId: args.projectId,
     cwd: args.cwd,
     timeoutMs: budget.remainingMs(),
   });

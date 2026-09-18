@@ -29,8 +29,14 @@ const codexHostContract = defineRpcContract({
 export default experimental_defineHostEntry({
   contract: codexHostContract,
   handlers: {
-    resolveNativeRoots: (): Promise<ExperimentalNativeRootsResolveAnswer> =>
-      resolveCodexNativeRoots({ homeDir: os.homedir(), env: process.env }),
+    resolveNativeRoots: (
+      _input,
+      context,
+    ): Promise<ExperimentalNativeRootsResolveAnswer> =>
+      resolveCodexNativeRoots({
+        homeDir: os.homedir(),
+        env: context.experimental_env,
+      }),
     "ai.inference.complete": async (
       input,
     ): Promise<ExperimentalAiInferenceCompleteOutput> => {

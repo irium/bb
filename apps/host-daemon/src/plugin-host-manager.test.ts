@@ -72,7 +72,7 @@ export default {
         context.signal.addEventListener("abort", finish, { once: true });
         if (context.signal.aborted) finish();
       });
-      return { before: before ?? null, after: process.env.GATE_VALUE ?? null, token: process.env.GH_TOKEN ?? null };
+      return { before: before ?? null, after: process.env.GATE_VALUE ?? null, token: process.env.GH_TOKEN ?? null, call: context.experimental_env.GATE_VALUE ?? null };
     },
     echo(input) { return { input, pid: process.pid }; },
     wait(_input, context) {
@@ -238,16 +238,18 @@ describe("PluginHostManager", () => {
       before: "first",
       after: "first",
       token: 'worker-secret\nwith"quotes',
+      call: "first",
     });
     expect(rotated.output).toEqual({
       before: "rotated",
       after: "rotated",
       token: 'worker-secret\nwith"quotes',
+      call: "rotated",
     });
     expect(
       (await manager.call(callCommand({ method: "environment", input: {} })))
         .output,
-    ).toEqual({ before: null, after: null, token: null });
+    ).toEqual({ before: null, after: null, token: null, call: null });
   });
 
   it("accepts a base64-encoded 20MB recording without daemon changes", async () => {
@@ -260,7 +262,12 @@ describe("PluginHostManager", () => {
         },
       }),
     );
-    expect(result.output).toEqual({ before: null, after: null, token: null });
+    expect(result.output).toEqual({
+      before: null,
+      after: null,
+      token: null,
+      call: null,
+    });
   });
 
   describe("environment reuse across active calls", () => {
@@ -387,7 +394,7 @@ describe("PluginHostManager", () => {
       cancel("a");
       await expect(a).resolves.toMatchObject({ name: "AbortError" });
       await expect(manager.call(command("c", "third"))).resolves.toMatchObject({
-        output: { before: "first", after: "first" },
+        output: { before: "first", after: "first", call: "third" },
       });
       cancel("b");
       await expect(b).resolves.toMatchObject({ name: "AbortError" });

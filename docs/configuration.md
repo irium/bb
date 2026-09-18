@@ -600,6 +600,12 @@ table lists what the shipped plugins declare and resolve.
 | Grok Build   | `$GROK_HOME/skills` or `~/.grok/skills`, plus `~/.agents/skills`, `~/.claude/skills`, `~/.cursor/skills` | The same four roots from the repository root to the current directory                                        |
 | Hermes Agent | `$HERMES_HOME/skills` or `~/.hermes/skills`                                                              | None                                                                                                         |
 
+Each variable above is read from the environment bb resolves for the project
+being listed: the machine's own variables, with Settings → Environment
+variables applied over them, global scope first and then that project's. A
+project that moves its agent's configuration directory therefore lists the
+skills of the directory its turns use.
+
 OpenCode also uses `$OPENCODE_CONFIG_DIR/skills` when that variable exists.
 Pi and omp use `$PI_CODING_AGENT_DIR` when that variable exists. omp also uses
 `$OMP_PROFILE` or `$PI_PROFILE` to select its active profile root. Cursor and
@@ -1445,13 +1451,19 @@ daemon's global environment. Existing terminals and commands retain
 their launch environment. Agent turns receive fresh values on the next turn;
 providers reconstruct sessions where needed to apply changed or removed values.
 
-Plugin host calls receive global variables only; they cannot select a project.
-A plugin worker keeps its current environment while any of its calls are active,
-as before. This means a project override of a credential such as `GH_TOKEN`
-applies to the project's clone, setup script, terminals, and agent turns, but
-not to git commands an environment provider plugin runs on the machine, which
-use the global value. Project-scoped contributions require daemon protocol 211;
-older daemons update before the server accepts their session.
+Plugin host calls receive global variables, plus the project's when the call
+names one. Listing a project's provider commands and skills names it, so an
+agent configuration directory moved per project is the directory bb lists that
+project's native skills and commands from; every other host call names no
+project and receives global values only. A handler reads its own call's values
+from `experimental_env`. A plugin worker keeps its current process environment
+while any of its calls are active, as before, so overlapping calls share the
+values applied first. This means a project override of a credential such as
+`GH_TOKEN` applies to the project's clone, setup script, terminals, and agent
+turns, but not to git commands an environment provider plugin runs on the
+machine, which use the global value. Project-scoped contributions require
+daemon protocol 211; older daemons update before the server accepts their
+session.
 
 For non-primary hosts, the built-in GitHub row uses `gh auth token --hostname
 github.com` and `gh api --hostname github.com user` on the server host. It

@@ -35,6 +35,7 @@ export interface ExperimentalCreateHostEntryHarnessOptions {
     readonly dataDir: string;
     readonly tempDir: string;
   };
+  readonly experimental_env?: Readonly<Record<string, string | undefined>>;
   readonly experimental_watch?: (
     options: ExperimentalHostWatchOptions,
     listener: ExperimentalHostWatchListener,
@@ -111,6 +112,7 @@ export function experimental_createHostEntryHarness<
     dataDir: "/test/plugin-data",
     tempDir: "/test/plugin-temp",
   };
+  const callEnvironment = harnessOptions.experimental_env ?? {};
   let disposePromise: Promise<void> | null = null;
 
   return {
@@ -153,6 +155,7 @@ export function experimental_createHostEntryHarness<
           signal: controller.signal,
           lifecycle: { signal: lifecycleController.signal },
           experimental_paths: paths,
+          experimental_env: callEnvironment,
           async experimental_emitSignal(signalName, payload) {
             const descriptor = entry.experimental_signals?.[signalName];
             if (descriptor === undefined) {

@@ -1246,7 +1246,7 @@ malformed runtime targets remain inert in both the app and SDK test runtime.
 7. Confirm `PluginFileOpenerSource.experimental_hostId` can become a stable
    required `hostId` field without breaking older opener implementations.
 
-## Host plugin foundation (`bb.hosts.experimental_client`, `ExperimentalHostClient.experimental_onWorkerExit`, `ExperimentalHostClient.experimental_onSignal`, `ExperimentalHostRpcContext.experimental_retainWorker`, `experimental_defineHostEntry`, `experimental_killProcessesWithCwdUnder`, and `experimental_createHostEntryHarness`)
+## Host plugin foundation (`bb.hosts.experimental_client`, `ExperimentalHostClient.experimental_onWorkerExit`, `ExperimentalHostClient.experimental_onSignal`, `ExperimentalHostRpcContext.experimental_retainWorker`, `ExperimentalHostRpcContext.experimental_env`, `experimental_defineHostEntry`, `experimental_killProcessesWithCwdUnder`, and `experimental_createHostEntryHarness`)
 
 **Kept experimental (2026-08-22).** signals and watches have no consumer (decide whether to delete them or keep them experimental separately from calls), none of the lifetime/limit numbers has been measured against a plugin other than keep-awake, and the artifact-contract names (`experimental_apiVersion`, `experimental_signals`, the injected context members) are read by the daemon from installed artifacts, so renaming them needs a dual-name window plus a protocol bump.
 
@@ -1255,7 +1255,8 @@ entry, share a Standard Schema contract between its server and host entries,
 and call methods on an explicit enrolled host. A client may observe unexpected
 worker exits and typed, ephemeral host signals. The host context supplies
 request and generation abort signals, persistent plugin-scoped data and
-worker-scoped temporary directories, daemon-owned native file watches, and
+worker-scoped temporary directories, this call's own resolved environment,
+daemon-owned native file watches, and
 explicit worker-retention leases for independent background work. Calls and
 watches retain automatically; otherwise, the daemon gracefully evicts a worker
 after five idle minutes and starts it again on the next call. There is no global
@@ -1314,6 +1315,16 @@ before deleting the directory. Confirm the platform coverage (Linux
    sufficient.
 7. **Environment.** Confirm executable discovery through normalized `PATH`
    and stripping all daemon-owned `BB_*` variables.
+   `ExperimentalHostRpcContext.experimental_env` is the environment bb
+   resolved for one call — the machine's own variables with the contributed
+   ones applied over them, including the listed project's when the caller
+   names a project. One worker serves the whole plugin, so `process.env`
+   carries whichever call's values were applied first while calls overlap; a
+   handler that answers from environment variables (every provider plugin's
+   `resolveNativeRoots`) reads this instead. Decide whether the same per-call
+   view should replace the worker-wide `process.env` mutation, whether child
+   processes a handler spawns should inherit it by default, and whether
+   contributed secrets belong on a context object a handler can log.
 8. **Trust and dependencies.** V1 host plugins are trusted Node programs that
    may use `child_process`, filesystem, and network APIs. Decide whether later
    permissions, native artifacts, or an explicit dependency installer can be

@@ -1524,6 +1524,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
         }
         return deps.callPluginHost({
           pluginId: row.id,
+          projectId: null,
           ...args,
           artifact: hostArtifactCandidate,
         });
@@ -1550,6 +1551,7 @@ export function createPluginRuntime(context: PluginRuntimeContext) {
             method,
             input,
             hostId: options.hostId,
+            projectId: null,
             timeoutMs: options.timeoutMs,
             ...(options.signal === undefined ? {} : { signal: options.signal }),
             artifact,

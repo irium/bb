@@ -85,6 +85,7 @@ export function resolveProjectWorkspaceTarget(
 
 export interface ProjectCommandWorkspace {
   hostId: string;
+  projectId: string;
   cwd: string | null;
 }
 
@@ -92,22 +93,24 @@ export function resolveProjectCommandWorkspace(
   deps: Pick<AppDeps, "config" | "db" | "hub">,
   args: ResolveProjectWorkspaceArgs,
 ): ProjectCommandWorkspace {
+  const projectId = args.projectId;
   if (args.environmentId !== undefined) {
     const environment = requireProjectEnvironment(deps, {
       environmentId: args.environmentId,
-      projectId: args.projectId,
+      projectId,
       ready: false,
     });
     assertUsableHostId(deps, { hostId: environment.hostId });
     if (environment.status === "ready" && environment.path !== null) {
-      return { hostId: environment.hostId, cwd: environment.path };
+      return { hostId: environment.hostId, projectId, cwd: environment.path };
     }
     return {
       hostId: environment.hostId,
+      projectId,
       cwd:
         resolveProjectSourceOnHost(deps, {
           hostId: environment.hostId,
-          projectId: args.projectId,
+          projectId,
         })?.path ?? null,
     };
   }
@@ -116,10 +119,11 @@ export function resolveProjectCommandWorkspace(
   assertUsableHostId(deps, { hostId });
   return {
     hostId,
+    projectId,
     cwd:
       resolveProjectSourceOnHost(deps, {
         hostId,
-        projectId: args.projectId,
+        projectId,
       })?.path ?? null,
   };
 }

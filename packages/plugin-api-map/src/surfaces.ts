@@ -951,6 +951,7 @@ export const SURFACE_GROUPS: SurfaceGroup[] = [
           "Declare desired loopback ports once and let bb deliver retained declarations when an enrolled machine reconnects",
           "Kill whatever is still running under a directory it is about to delete, SIGTERM then SIGKILL, so a torn-down workspace leaves nothing behind",
           "Spawn host-local commands with a sanitized inherited environment",
+          "Read the environment bb resolved for the current call, including the listed project's machine variables, instead of the worker-wide process.env",
         ],
         apiSymbols: [
           "PluginHosts",
