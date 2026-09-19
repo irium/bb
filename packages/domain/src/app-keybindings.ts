@@ -166,21 +166,42 @@ const SHIFTED_KEY_BASES: Readonly<Record<string, string>> = {
   "?": "/",
 };
 
+const PUNCTUATION_CODE_BASES: Readonly<Record<string, string>> = {
+  Backquote: "`",
+  Backslash: "\\",
+  BracketLeft: "[",
+  BracketRight: "]",
+  Comma: ",",
+  Equal: "=",
+  Minus: "-",
+  Period: ".",
+  Quote: "'",
+  Semicolon: ";",
+  Slash: "/",
+};
+
 function baseKeyFromCode(code: string): string | null {
   if (/^Key[A-Z]$/u.test(code)) return code.slice(3).toLowerCase();
   if (/^Digit[0-9]$/u.test(code)) return code.slice(5);
-  return null;
+  return PUNCTUATION_CODE_BASES[code] ?? null;
 }
 
 function isAsciiAlphanumeric(value: string): boolean {
   return /^[a-z0-9]$/iu.test(value);
 }
 
+function isNonAsciiCharacterKey(value: string): boolean {
+  return value.length === 1 && value.charCodeAt(0) > 127;
+}
+
 export function normalizeAppShortcutInputKey(input: AppShortcutInput): string {
   if (input.key === " " || input.key === "Spacebar") {
     return "Space";
   }
-  if (input.altKey && !isAsciiAlphanumeric(input.key)) {
+  if (
+    (input.altKey && !isAsciiAlphanumeric(input.key)) ||
+    isNonAsciiCharacterKey(input.key)
+  ) {
     const fromCode = baseKeyFromCode(input.code);
     if (fromCode !== null) return fromCode;
   }

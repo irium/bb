@@ -172,6 +172,78 @@ describe("app keybindings", () => {
     ).toBe(true);
   });
 
+  it.each([
+    ["k", "л", "KeyK"],
+    ["p", "з", "KeyP"],
+    ["f", "а", "KeyF"],
+  ])(
+    "matches Mod+%s by physical key when a cyrillic layout reports %s",
+    (key, cyrillic, code) => {
+      expect(
+        matchesAppShortcut(
+          {
+            key: cyrillic,
+            code,
+            metaKey: false,
+            ctrlKey: true,
+            altKey: false,
+            shiftKey: false,
+          },
+          { ...MOD_N, key },
+          false,
+        ),
+      ).toBe(true);
+    },
+  );
+
+  it("matches cyrillic punctuation positions against their latin binding keys", () => {
+    expect(
+      matchesAppShortcut(
+        {
+          key: "Х",
+          code: "BracketLeft",
+          metaKey: false,
+          ctrlKey: true,
+          altKey: false,
+          shiftKey: true,
+        },
+        { ...MOD_N, key: "[", shift: true },
+        false,
+      ),
+    ).toBe(true);
+    expect(
+      matchesAppShortcut(
+        {
+          key: "б",
+          code: "Comma",
+          metaKey: false,
+          ctrlKey: true,
+          altKey: false,
+          shiftKey: false,
+        },
+        { ...MOD_N, key: "," },
+        false,
+      ),
+    ).toBe(true);
+  });
+
+  it("keeps distinct cyrillic keys on distinct physical positions", () => {
+    expect(
+      matchesAppShortcut(
+        {
+          key: "л",
+          code: "KeyK",
+          metaKey: false,
+          ctrlKey: true,
+          altKey: false,
+          shiftKey: false,
+        },
+        { ...MOD_N, key: "l" },
+        false,
+      ),
+    ).toBe(false);
+  });
+
   it("matches an uncomposed alt chord by key across platforms", () => {
     expect(
       matchesAppShortcut(

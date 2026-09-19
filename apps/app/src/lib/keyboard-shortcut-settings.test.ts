@@ -88,6 +88,22 @@ describe("keyboard shortcut settings", () => {
     ).toMatchObject({ key: "m", alt: true, mod: false, shift: false });
   });
 
+  it("records a cyrillic layout chord by its latin physical key", () => {
+    expect(
+      appShortcutFromInput(
+        {
+          key: "л",
+          code: "KeyK",
+          metaKey: false,
+          ctrlKey: true,
+          altKey: false,
+          shiftKey: false,
+        },
+        "Win32",
+      ),
+    ).toMatchObject({ key: "k", mod: true, alt: false, shift: false });
+  });
+
   it("preserves explicit non-primary modifiers", () => {
     expect(
       appShortcutFromInput(
